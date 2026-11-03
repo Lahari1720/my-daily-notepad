@@ -1,0 +1,117 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>My Daily Notepad</title>
+<style>
+body{font-family:Arial;background:#f3f5f8;margin:20px}
+main{max-width:800px;margin:auto;background:white;padding:24px;border-radius:12px}
+h1{color:#243b53}
+input,textarea,button{font:inherit;padding:10px;margin:5px;border:1px solid #ccc;border-radius:6px}
+textarea{width:95%;height:300px;line-height:1.6}
+button{cursor:pointer;background:#2563eb;color:white}
+#status{color:green;font-size:14px}
+</style>
+</head>
+<body>
+<main>
+<h1>My Daily Notepad</h1>
+<p>Write your daily activities. Your notes save automatically.</p>
+
+<label for="date">Date:</label>
+<input type="date" id="date">
+<br>
+
+<textarea id="note" placeholder="Write what you did today..."></textarea>
+<p id="status">Ready to write.</p>
+
+<button onclick="newNote()">New Note</button>
+<button onclick="exportNote()">Export Note</button>
+<button onclick="deleteNote()">Delete Note</button>
+
+<h3>Previous Notes</h3>
+<div id="history"></div>
+</main>
+
+<script>
+const date = document.getElementById("date");
+const note = document.getElementById("note");
+const status = document.getElementById("status");
+const history = document.getElementById("history");
+
+let notes = JSON.parse(
+  localStorage.getItem("dailyNotes") || "{}"
+);
+
+function today() {
+  const d = new Date();
+  return d.getFullYear() + "-" +
+    String(d.getMonth()+1).padStart(2,"0") + "-" +
+    String(d.getDate()).padStart(2,"0");
+}
+
+function save() {
+  if (note.value.trim()) {
+    notes[date.value] = note.value;
+  } else {
+    delete notes[date.value];
+  }
+
+  localStorage.setItem("dailyNotes", JSON.stringify(notes));
+  status.textContent = "Saved automatically.";
+  showHistory();
+}
+
+function loadNote() {
+  note.value = notes[date.value] || "";
+  status.textContent = "Note loaded.";
+}
+
+function newNote() {
+  date.value = today();
+  loadNote();
+}
+
+function deleteNote() {
+  if (confirm("Delete this day's note?")) {
+    delete notes[date.value];
+    note.value = "";
+    save();
+    status.textContent = "Note deleted.";
+  }
+}
+
+function exportNote() {
+  const file = new Blob([note.value], {type:"text/plain"});
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(file);
+  link.download = "daily-note-" + date.value + ".txt";
+  link.click();
+  URL.revokeObjectURL(link.href);
+}
+
+function showHistory() {
+  history.replaceChildren();
+
+  Object.keys(notes).sort().reverse().forEach(d => {
+    const button = document.createElement("button");
+    button.textContent = d;
+    button.onclick = () => {
+      date.value = d;
+      loadNote();
+    };
+    history.appendChild(button);
+  });
+}
+
+date.value = today();
+loadNote();
+showHistory();
+
+note.addEventListener("input", save);
+date.addEventListener("change", loadNote);
+</script>
+</body>
+</html>
